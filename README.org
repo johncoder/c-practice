@@ -2,3 +2,71 @@
 #+AUTHOR: John Nelson
 
 This repository just contains some fundamentals in C.
+
+* Introduction
+You might have been expecting markdown, but instead you've found your way into an org document. This uses =org-babel= to turn this into a so-called /literate programming/ exercise. Works best in Emacs.
+
+To get set up, make sure your =.emacs= file loads languages for =org-babel=:
+
+Once you have it set up, you can execute =org-babel-tangle= by pressing =C-c C-v t=, which will take all the source code and /tangle/ it into individual files (under the =src= directory, as indicated by the =:tangle= directive).
+
+Rather than try to run any of the blocks using =org-babel=, I'm binding =F5= to =(compile)= in my =.emacs=:
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<f5>") 'compile)
+#+END_SRC
+
+Then when I press =F5=, I get prompted for a compilation command =make -k= and change it to be =make -k && ./a.out=, which will work great for these purposes. So the workflow is this:
+
++ Press =C-c C-v t= to tangle into files
++ Press =F5= to do an interactive compilation
++ Press =RET= to execute the compilation command.
+
+Compiler errors are a part of life, so these are my bindings for quickly moving to errors. For now it's clunky because it'll take you to the tangled files (therefore any edits will happen back in this =README.org= file).
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-<f5>") 'next-error)
+(global-set-key (kbd "C-S-<f5>") 'previous-error)
+#+END_SRC
+
+* Build
+
+Don't forget to =org-babel-tangle=! Use compilation command =make -k && ./a.out=.
+
+#+BEGIN_SRC make :tangle ./Makefile
+all:
+	gcc src/main.c
+#+END_SRC
+* Libs
+** Minimum Heap
+#+BEGIN_SRC c :tangle src/min-heap.h
+typedef struct
+{
+  int *Heap;
+  int MaxSize;
+  int Size;
+} min_heap;
+#+END_SRC
+#+BEGIN_SRC c :tangle src/min-heap.c
+#include "min-heap.h"
+
+int
+minheap_poll(min_heap *heap)
+{
+  return heap[0];
+}
+#+END_SRC
+* Main
+
+#+BEGIN_SRC c :tangle src/main.c
+#include <stdio.h>
+#include "min-heap.h"
+
+int
+main(int argc, char **args)
+{
+    min_heap MinHeap = {0};
+    printf("Hello, world!\n");
+    return 0;
+}
+#+END_SRC
