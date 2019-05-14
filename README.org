@@ -1,0 +1,4 @@
+#+TITLE: C Practice
+#+AUTHOR: John Nelson
+
+This repository just contains some fundamentals in C.
