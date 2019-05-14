@@ -177,18 +177,22 @@ MinHeap_Heapify(min_heap *Heap, int Direction)
         {
             int Smaller = MinHeap_ChildLeft(Position);
 
-            if (MinHeap_Value(Heap, MinHeap_ChildRight(Position)) >
+            if (MinHeap_Exists(Heap, MinHeap_ChildRight(Position)) &&
+                MinHeap_Value(Heap, MinHeap_ChildRight(Position)) <
                 MinHeap_Value(Heap, MinHeap_ChildLeft(Position)))
             {
                 Smaller = MinHeap_ChildRight(Position);
             }
 
-            if (MinHeap_Value(Heap, Position) < MinHeap_Value(Heap, Smaller))
+            if (MinHeap_Value(Heap, Position) > MinHeap_Value(Heap, Smaller))
+            {
+                MinHeap_Swap(Heap, Position, Smaller);
+                Position = Smaller;
+            }
+            else
             {
                 break;
             }
-            MinHeap_Swap(Heap, Position, MinHeap_ChildLeft(Smaller));
-            Position = Smaller;
         }
     }
 }
@@ -258,9 +262,33 @@ MinHeap_Test_2()
     MinHeap_Create(&Heap, 1024);
     int Values[] = {52, 43, 13, 18, 22,
                     32, 9, 11, 2, 134};
+    int SortedValues[] = {2, 9, 11, 13, 18,
+                          22, 32, 43, 52, 134};
     for (int i = 0; i < 10; i++)
     {
         MinHeap_Add(&Heap, Values[i]);
+    }
+    MinHeap_PrintPretty(&Heap);
+    for (int i = 0; i < 10; i++)
+    {
+        int Value = 0;
+        int Result = MinHeap_Poll(&Heap, &Value);
+        if (Result == MinHeap_OK)
+        {
+            if (Value != SortedValues[i])
+            {
+                printf("?(%i, %i)\n", Value, SortedValues[i]);
+                MinHeap_PrintPretty(&Heap);
+            }
+            else
+            {
+                printf("%i, ", Value);
+            }
+        }
+        else
+        {
+            printf("Error(%i)", Result);
+        }
     }
     MinHeap_PrintPretty(&Heap);
     MinHeap_Free(&Heap);

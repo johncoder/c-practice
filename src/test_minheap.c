@@ -32,9 +32,33 @@ MinHeap_Test_2()
     MinHeap_Create(&Heap, 1024);
     int Values[] = {52, 43, 13, 18, 22,
                     32, 9, 11, 2, 134};
+    int SortedValues[] = {2, 9, 11, 13, 18,
+                          22, 32, 43, 52, 134};
     for (int i = 0; i < 10; i++)
     {
         MinHeap_Add(&Heap, Values[i]);
+    }
+    MinHeap_PrintPretty(&Heap);
+    for (int i = 0; i < 10; i++)
+    {
+        int Value = 0;
+        int Result = MinHeap_Poll(&Heap, &Value);
+        if (Result == MinHeap_OK)
+        {
+            if (Value != SortedValues[i])
+            {
+                printf("?(%i, %i)\n", Value, SortedValues[i]);
+                MinHeap_PrintPretty(&Heap);
+            }
+            else
+            {
+                printf("%i, ", Value);
+            }
+        }
+        else
+        {
+            printf("Error(%i)", Result);
+        }
     }
     MinHeap_PrintPretty(&Heap);
     MinHeap_Free(&Heap);

@@ -86,18 +86,22 @@ MinHeap_Heapify(min_heap *Heap, int Direction)
         {
             int Smaller = MinHeap_ChildLeft(Position);
 
-            if (MinHeap_Value(Heap, MinHeap_ChildRight(Position)) >
+            if (MinHeap_Exists(Heap, MinHeap_ChildRight(Position)) &&
+                MinHeap_Value(Heap, MinHeap_ChildRight(Position)) <
                 MinHeap_Value(Heap, MinHeap_ChildLeft(Position)))
             {
                 Smaller = MinHeap_ChildRight(Position);
             }
 
-            if (MinHeap_Value(Heap, Position) < MinHeap_Value(Heap, Smaller))
+            if (MinHeap_Value(Heap, Position) > MinHeap_Value(Heap, Smaller))
+            {
+                MinHeap_Swap(Heap, Position, Smaller);
+                Position = Smaller;
+            }
+            else
             {
                 break;
             }
-            MinHeap_Swap(Heap, Position, MinHeap_ChildLeft(Smaller));
-            Position = Smaller;
         }
     }
 }
