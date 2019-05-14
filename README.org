@@ -39,6 +39,8 @@ all:
 #+END_SRC
 * Libs
 ** Minimum Heap
+*** Header
+
 #+BEGIN_SRC c :tangle src/min-heap.h
 typedef struct
 {
@@ -47,6 +49,9 @@ typedef struct
   int Size;
 } min_heap;
 #+END_SRC
+
+*** Implementation
+
 #+BEGIN_SRC c :tangle src/min-heap.c
 #include "min-heap.h"
 
