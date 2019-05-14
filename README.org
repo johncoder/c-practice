@@ -35,43 +35,273 @@ Don't forget to =org-babel-tangle=! Use compilation command =make -k && ./a.out=
 
 #+BEGIN_SRC make :tangle ./Makefile
 all:
-	gcc src/main.c
+	gcc src/main.c src/min-heap.c
 #+END_SRC
 * Libs
 ** Minimum Heap
 *** Header
 
 #+BEGIN_SRC c :tangle src/min-heap.h
+#define MinHeap_Empty(Heap) (Heap->Size == 0)
+#define MinHeap_Last(Heap) (Heap->Heap[Heap->Size - 1])
+#define MinHeap_Full(Heap) (Heap->Size == Heap->Capacity)
+#define MinHeap_Parent(Position) ((Position - 1) / 2)
+#define MinHeap_ChildLeft(Position) ((Position * 2) + 1)
+#define MinHeap_ChildRight(Position) ((Position * 2) + 2)
+#define MinHeap_Value(Heap, Position) (Heap->Heap[Position])
+#define MinHeap_Exists(Heap, Position) (Position >= 0 && Position < Heap->Size)
+#define MinHeap_Swap(Heap, A, B) do { \
+    int Temp = Heap->Heap[A];         \
+    Heap->Heap[A] = Heap->Heap[B];    \
+    Heap->Heap[B] = Temp;             \
+} while (0);
+
 typedef struct
 {
-  int *Heap;
-  int MaxSize;
-  int Size;
+    int *Heap;
+    int Capacity;
+    int Size;
 } min_heap;
+
+typedef enum
+{
+    MinHeap_Up,
+    MinHeap_Down,
+    NUM_MINHEAP_DIRECTION
+} minheap_direction;
+
+typedef enum
+{
+    MinHeap_OK,
+    MinHeap_ErrorOutOfBounds,
+    MinHeap_ErrorEmpty,
+    MinHeap_ErrorFull,
+} minheap_result;
+
+void MinHeap_Create(min_heap *Heap, int Size);
+void MinHeap_Free(min_heap *Heap);
+void MinHeap_Print(min_heap *Heap);
+void MinHeap_PrintPretty(min_heap *Heap);
+minheap_result MinHeap_Add(min_heap *Heap, int Value);
+minheap_result MinHeap_Poll(min_heap *Heap, int *Value);
 #+END_SRC
 
 *** Implementation
 
 #+BEGIN_SRC c :tangle src/min-heap.c
+#include <malloc.h>
+#include <assert.h>
+#include <string.h>
+#include "min-heap.h"
+
+void
+MinHeap_Create(min_heap *Heap, int Size)
+{
+    Heap->Heap = malloc(sizeof(int) * Size);
+    memset(Heap->Heap, 0, sizeof(int) * Size);
+    Heap->Capacity = Size;
+    Heap->Size = 0;
+}
+
+void
+MinHeap_Free(min_heap *Heap)
+{
+    if (Heap->Heap)
+    {
+        free(Heap->Heap);
+    }
+}
+
+void
+MinHeap_Print(min_heap *Heap)
+{
+    for (int i = 0; i < Heap->Size; i++)
+    {
+        printf("%i = %i, ", i, MinHeap_Value(Heap, i));
+    }
+    printf("|\n");
+}
+
+void
+MinHeap_PrintPretty(min_heap *Heap)
+{
+    int Level = 0;
+    int Left = 1;
+    printf("\nLevel 0: ");
+    for (int i = 0; i < Heap->Size; i++)
+    {
+        if (Left == 0)
+        {
+            if (Level == 1)
+            {
+                Level = 2;
+            }
+            else
+            {
+                Level++;
+            }
+            printf("\nLevel %i: ", Level);
+            Left = Level * 2;
+        }
+        if (Left % 2 == 0 && MinHeap_Exists(Heap, MinHeap_Parent(i)))
+        {
+            printf("[%i]", MinHeap_Value(Heap, MinHeap_Parent(i)));
+        }
+        printf("%i%c", MinHeap_Value(Heap, i), Left % 2 == 0 ? '+' : ' ');
+        Left--;
+    }
+    printf("__\n");
+}
+
+void
+MinHeap_Heapify(min_heap *Heap, int Direction)
+{
+    assert(Direction == MinHeap_Up ||
+           Direction == MinHeap_Down);
+
+    if (Direction == MinHeap_Up)
+    {
+        int Position = Heap->Size - 1;
+        while (MinHeap_Exists(Heap, MinHeap_Parent(Position)) &&
+               MinHeap_Value(Heap, MinHeap_Parent(Position)) >
+               MinHeap_Value(Heap, Position))
+        {
+            MinHeap_Swap(Heap, Position, MinHeap_Parent(Position));
+            Position = MinHeap_Parent(Position);
+        }
+    }
+    else if (Direction == MinHeap_Down)
+    {
+        int Position = 0;
+        while (MinHeap_Exists(Heap, MinHeap_ChildLeft(Position)))
+        {
+            int Smaller = MinHeap_ChildLeft(Position);
+
+            if (MinHeap_Value(Heap, MinHeap_ChildRight(Position)) >
+                MinHeap_Value(Heap, MinHeap_ChildLeft(Position)))
+            {
+                Smaller = MinHeap_ChildRight(Position);
+            }
+
+            if (MinHeap_Value(Heap, Position) < MinHeap_Value(Heap, Smaller))
+            {
+                break;
+            }
+            MinHeap_Swap(Heap, Position, MinHeap_ChildLeft(Smaller));
+            Position = Smaller;
+        }
+    }
+}
+
+minheap_result
+MinHeap_Poll(min_heap *Heap, int *Value)
+{
+    if (MinHeap_Empty(Heap))
+    {
+        return MinHeap_ErrorEmpty;
+    }
+    *Value = Heap->Heap[0];
+    MinHeap_Swap(Heap, 0, Heap->Size - 1);
+    Heap->Size--;
+    MinHeap_Heapify(Heap, MinHeap_Down);
+    return MinHeap_OK;
+}
+
+minheap_result
+MinHeap_Add(min_heap *Heap, int Value)
+{
+    if (MinHeap_Full(Heap))
+    {
+        return MinHeap_ErrorFull;
+    }
+
+    Heap->Heap[Heap->Size] = Value;
+    Heap->Size++;
+    MinHeap_Heapify(Heap, MinHeap_Up);
+    return MinHeap_OK;
+}
+#+END_SRC
+
+*** Tests
+#+BEGIN_SRC c :tangle src/test_minheap.c
+#include <assert.h>
+#include <stdio.h>
 #include "min-heap.h"
 
 int
-minheap_poll(min_heap *heap)
+MinHeap_Test_1()
 {
-  return heap[0];
+    min_heap Heap;
+    MinHeap_Create(&Heap, 1024);
+    for (int i = 10; i > 0; --i)
+    {
+        MinHeap_Add(&Heap, i);
+    }
+    MinHeap_Print(&Heap);
+    int Head = 0;
+    int Result = MinHeap_Poll(&Heap, &Head);
+    MinHeap_Free(&Heap);
+    if (Result == MinHeap_OK && Head == 1)
+    {
+        return 1;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+int
+MinHeap_Test_2()
+{
+    min_heap Heap;
+    MinHeap_Create(&Heap, 1024);
+    int Values[] = {52, 43, 13, 18, 22,
+                    32, 9, 11, 2, 134};
+    for (int i = 0; i < 10; i++)
+    {
+        MinHeap_Add(&Heap, Values[i]);
+    }
+    MinHeap_PrintPretty(&Heap);
+    MinHeap_Free(&Heap);
+    return -1;
+}
+
+void
+MinHeap_Tests()
+{
+    int Result = MinHeap_Test_1();
+    if (!Result)
+    {
+        printf("Test 1 failed.\n");
+    }
+    else
+    {
+        printf("Test 1 passed!\n");
+    }
+    Result = 0;
+    Result = MinHeap_Test_2();
+    if (!Result)
+    {
+        printf("Test 2 failed.\n");
+    }
+    else
+    {
+        printf("Test 2 passed!\n");
+    }
 }
 #+END_SRC
 * Main
 
 #+BEGIN_SRC c :tangle src/main.c
 #include <stdio.h>
-#include "min-heap.h"
+#include "test_minheap.c"
 
 int
 main(int argc, char **args)
 {
-    min_heap MinHeap = {0};
-    printf("Hello, world!\n");
+    printf("Starting\n");
+    MinHeap_Tests();
     return 0;
 }
 #+END_SRC

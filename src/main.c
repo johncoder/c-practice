@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include "min-heap.h"
+#include "test_minheap.c"
 
 int
 main(int argc, char **args)
 {
-    min_heap MinHeap = {0};
-    printf("Hello, world!\n");
+    printf("Starting\n");
+    MinHeap_Tests();
     return 0;
 }
